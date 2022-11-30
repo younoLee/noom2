@@ -29,9 +29,9 @@ wss.on("connection",(socket) => {
     console.log("connected to Browser")
     socket.on("close", ()=> console.log("Disconnected from the Server"))
     socket.on("message",(message)=>{
-        console.log(`${message}`)
+        socket.send(`${message}`);
     })
-    socket.send("hello!!")// socket의 send 메소드로 메세지 전당, 서버-> 사용자 ,사용자의 프런트엔드에서 소켓 관련 설정X -> 브라우저에서 볼수 없음
+   // socket.send("hello!!")// socket의 send 메소드로 메세지 전당, 서버-> 사용자 ,사용자의 프런트엔드에서 소켓 관련 설정X -> 브라우저에서 볼수 없음
 });
 // console.log("hello")
 server.listen(3000, handleListen);
