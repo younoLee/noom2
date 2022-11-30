@@ -25,11 +25,14 @@ wss.on("connection", handleConnection);*/
 //웹소켓 서버 wss의 on 메소드-> "connection" 이벤트 발생시 -> 공백함수 handleConnection 호출
 //on 메소드는 롤백함수에 spcket를 전달
 
+const sockets = [];
+
 wss.on("connection",(socket) => {
+    sockets.push(socket);
     console.log("connected to Browser")
     socket.on("close", ()=> console.log("Disconnected from the Server"))
     socket.on("message",(message)=>{
-        socket.send(`${message}`);
+        sockets.forEach(asocket => asocket.send(`${message}`));
     })
    // socket.send("hello!!")// socket의 send 메소드로 메세지 전당, 서버-> 사용자 ,사용자의 프런트엔드에서 소켓 관련 설정X -> 브라우저에서 볼수 없음
 });
