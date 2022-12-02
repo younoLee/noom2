@@ -1,6 +1,7 @@
 import http from "http";
 import WebSocket from "ws";
 import express from 'express';
+import { type } from "os";
 
 const app = express();
 app.set("view engine","pug");
@@ -29,12 +30,20 @@ const sockets = [];
 
 wss.on("connection",(socket) => {
     sockets.push(socket);
+    socket["nickname"] = "Anonymous"
     console.log("connected to Browser")
     socket.on("close", ()=> console.log("Disconnected from the Server"))
-    socket.on("message",(message)=>{
-        sockets.forEach(asocket => asocket.send(`${message}`));
-    })
-   // socket.send("hello!!")// socket의 send 메소드로 메세지 전당, 서버-> 사용자 ,사용자의 프런트엔드에서 소켓 관련 설정X -> 브라우저에서 볼수 없음
+    socket.on("message",(msg)=>{
+        const message = JSON.parse(msg);
+        switch(message.type){
+            case "new_message":
+                sockets.forEach(asocket => asocket.send(`${socket.nickname}:${message.payload}`));
+                break;
+            case "nickname":
+                socket["nickname"] = message.payload;
+                break;
+        };
+    });
 });
 // console.log("hello")
 server.listen(3000, handleListen);
