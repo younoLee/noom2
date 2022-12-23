@@ -35,6 +35,10 @@ async function getCameras() {
 async function getMedia(deviceId) {
     const  initialConstraints = {
         audio: true,
+        video: { facingMode: "user" }
+    };
+    const cameraConstraints = {
+        audio: true,
         video: { deviceId: { exact: deviceId } }
     };
     try {
@@ -42,7 +46,10 @@ async function getMedia(deviceId) {
             deviceId ? cameraConstraints: initialConstraints
         );
         myFace.srcObject = myStream;
-        await getCameras();
+        if(!deviceId){
+            await getCameras();
+        }
+        
     } catch(e) {
         console.log(e);
     }
@@ -72,9 +79,33 @@ function handleCameraClick(){
         cameraOff = false;
     }
 }
+// RTC Code
 
+function makeConnection() {
+    mypeerConnection = new RTCPeerConnection();
+    mypeerConnection.addEventListener("icecandidate",handleIce);
+    mypeerConnection.addEventListener("addstream",handleAddStream);
+    myStream.getTracks()
+    .forEach(track => mypeerConnection.addTrack(track, myStream));
+}
+
+function handleIce(data){
+    console.log("sent candidate")
+    socket.emit("ice", data.candidate, roomName);
+}
 async function handleCameraChange(){
     await getMedia(cameraSelect.value);
+    if(mypeerConnection){
+        const videoTrack = myStream.getVideoTracks()[0];
+        const videoSender = mypeerConnection
+        .getSenders()
+        .find((sender) => sender.track.kind === "video");
+        videoSender.replaceTrack(videoTrack);
+    }
+}
+function handleAddStream(data){
+    const peerFace= document.getElementById("peerFace")
+    peerFace.srcObject = data.stream;
 }
 
 // Welcome Form (join a room)
@@ -112,18 +143,20 @@ socket.on("welcome",async () => {
 })
 
 socket.on("offer",async(offer) => {
+    console.log("received the offer");
     mypeerConnection.setRemoteDescription(offer);
     const answer = await mypeerConnection.createAnswer();
     mypeerConnection.setLocalDescription(answer);
     socket.emit("answer",answer,roomName);
+    console.log("sent the answer");
 })
 socket.on("answer",answer => {
+    console.log("received the answer");
     mypeerConnection.setRemoteDescription(answer);
+    
 });
-// RTC Code
+socket.on("ice",ice => {
+    console.log("recived candidate")
+    mypeerConnection.addIceCandidate(ice);
 
-function makeConnection() {
-    mypeerConnection = new RTCPeerConnection();
-    myStream.getTracks()
-    .forEach(track => mypeerConnection.addTrack(track, myStream));
-}
+})
